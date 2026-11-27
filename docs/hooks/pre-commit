@@ -1,0 +1,34 @@
+#!/bin/sh
+# Hook pre-commit: Git lo ejecuta ANTES de crear cada commit.
+# exit 0 -> el commit continúa  |  exit 1 -> el commit se cancela
+
+echo "[pre-commit] Revisando archivos del staging..."
+
+# Archivos añadidos (A), copiados (C) o modificados (M) que van en este commit
+archivos=$(git diff --cached --name-only --diff-filter=ACM)
+
+# 1) Bloquear cualquier archivo .env (secretos)
+if echo "$archivos" | grep -qE '(^|/)\.env$'; then
+  echo "[pre-commit] ERROR: intentas commitear un archivo .env (contiene secretos)."
+  echo "[pre-commit] Sácalo del staging con: git restore --staged <ruta>/.env"
+  exit 1
+fi
+
+# 2) Validar la sintaxis de cada .js con node --check
+errores=0
+for archivo in $(echo "$archivos" | grep -E '\.js$'); do
+  if node --check "$archivo"; then
+    echo "[pre-commit] OK      $archivo"
+  else
+    echo "[pre-commit] ERROR   $archivo tiene un error de sintaxis"
+    errores=1
+  fi
+done
+
+if [ "$errores" -ne 0 ]; then
+  echo "[pre-commit] Commit cancelado: corrige los errores y vuelve a intentarlo."
+  exit 1
+fi
+
+echo "[pre-commit] Todo correcto, se crea el commit."
+exit 0
