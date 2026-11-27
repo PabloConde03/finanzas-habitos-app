@@ -1,0 +1,2 @@
+# Los scripts de hooks siempre con finales de línea LF (sh no entiende CRLF)
+docs/hooks/* text eol=lf
