@@ -98,7 +98,32 @@
 
       <!-- Hueco común -->
       <section id="contenido" class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-8">
-        <!-- SECCIONES: aquí irán los bloques de Finanzas y Hábitos -->
+        <!-- Bloque: Finanzas -->
+        <article id="finanzas" class="rounded-3xl bg-[#EEF2FB] p-6">
+          <h2 class="text-xl font-bold">Transacciones</h2>
+
+          <!-- Formulario para añadir una transacción -->
+          <form id="form-transaccion" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <select name="tipo" class="rounded-full bg-white px-4 py-2 text-sm border border-slate-200">
+              <option value="gasto">Gasto</option>
+              <option value="ingreso">Ingreso</option>
+            </select>
+            <input name="cantidad" type="number" step="0.01" min="0.01" required placeholder="Cantidad (€)"
+                   class="rounded-full bg-white px-4 py-2 text-sm border border-slate-200">
+            <input name="categoria" type="text" placeholder="Categoría"
+                   class="rounded-full bg-white px-4 py-2 text-sm border border-slate-200">
+            <input name="descripcion" type="text" placeholder="Descripción"
+                   class="rounded-full bg-white px-4 py-2 text-sm border border-slate-200">
+            <input name="fecha" type="date"
+                   class="rounded-full bg-white px-4 py-2 text-sm border border-slate-200">
+            <button type="submit" class="rounded-full bg-blue-600 text-white font-semibold px-4 py-2 text-sm hover:bg-blue-700">Añadir</button>
+          </form>
+          <p id="error-transaccion" class="mt-2 text-sm text-rose-500"></p>
+
+          <!-- Lista de transacciones (la rellena js/finanzas.js) -->
+          <ul id="lista-transacciones" class="mt-4 flex flex-col gap-2"></ul>
+        </article>
+        <script type="module" src="js/finanzas.js"></script>
       </section>
 
     </main>
