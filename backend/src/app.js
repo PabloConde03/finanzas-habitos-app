@@ -48,6 +48,59 @@ app.post('/api/transacciones', (req, res) => {
   res.status(201).json(nueva);
 });
 
+// ---------- Hábitos ----------
+
+// GET /api/habitos -> lista todos por orden de creación
+app.get('/api/habitos', (req, res) => {
+  res.json(db.prepare('SELECT * FROM habitos ORDER BY id').all());
+});
+
+// POST /api/habitos -> crea un hábito nuevo (racha 0, nunca completado)
+app.post('/api/habitos', (req, res) => {
+  const { nombre, descripcion } = req.body ?? {};
+
+  if (typeof nombre !== 'string' || nombre.trim() === '') {
+    return res.status(400).json({ error: 'nombre es obligatorio' });
+  }
+
+  try {
+    const resultado = db
+      .prepare('INSERT INTO habitos (nombre, descripcion) VALUES (?, ?)')
+      .run(nombre.trim(), descripcion ?? null);
+    const nuevo = db.prepare('SELECT * FROM habitos WHERE id = ?').get(resultado.lastInsertRowid);
+    res.status(201).json(nuevo);
+  } catch (err) {
+    // El UNIQUE del esquema impide dos hábitos con el mismo nombre
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: `ya existe un hábito llamado "${nombre.trim()}"` });
+    }
+    throw err;
+  }
+});
+
+// POST /api/habitos/:id/completar -> marca el hábito como hecho hoy y actualiza la racha
+app.post('/api/habitos/:id/completar', (req, res) => {
+  const habito = db.prepare('SELECT * FROM habitos WHERE id = ?').get(req.params.id);
+  if (!habito) {
+    return res.status(404).json({ error: 'hábito no encontrado' });
+  }
+
+  // Pedimos las fechas a SQLite para usar el mismo reloj que el esquema
+  const { hoy, ayer } = db.prepare("SELECT date('now') AS hoy, date('now', '-1 day') AS ayer").get();
+
+  if (habito.ultima_fecha === hoy) {
+    return res.status(409).json({ error: 'este hábito ya se completó hoy' });
+  }
+
+  // Si se hizo ayer la racha continúa; si no, empieza de nuevo
+  const nuevaRacha = habito.ultima_fecha === ayer ? habito.racha_actual + 1 : 1;
+
+  db.prepare('UPDATE habitos SET racha_actual = ?, ultima_fecha = ? WHERE id = ?')
+    .run(nuevaRacha, hoy, habito.id);
+
+  res.json(db.prepare('SELECT * FROM habitos WHERE id = ?').get(habito.id));
+});
+
 // ---------- Arranque ----------
 
 app.listen(PUERTO, () => {
